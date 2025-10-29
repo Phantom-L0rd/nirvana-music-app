@@ -1,12 +1,9 @@
 # Nirvana Music App
 
----
 
 ## Overview
 
 **Nirvana** is a personal music streaming app built with **Flutter (frontend)** and **FastAPI (backend)**. It supports playlist management, song caching, and search via YouTube Music API.
-
----
 
 ## Tech Stack
 
@@ -14,7 +11,6 @@
 **Backend:** FastAPI, SQLite3, yt_dlp, ytmusicapi
 **Language:** Python, Dart
 
----
 
 ## Features
 
@@ -25,15 +21,11 @@
 * Beautiful Flutter UI
 * FastAPI backend with REST endpoints
 
----
-
 ## Project Structure
 
----
 
 ## Architecture
 
----
 
 ## Setup Instructions
 
@@ -67,8 +59,6 @@ flutter run
 pip install -U yt-dlp
 ```
 
----
-
 ## Project Structure
 
 ```
@@ -81,9 +71,7 @@ nirvana-music-app/
 │   │   ├── models.py
 │   │   ├── __pycache__
 │   │   └── utils.py
-│   ├── requirements.txt
-│   └── static
-│       └── images
+│   └── requirements.txt
 ├── frontend
 │   └── lib
 │       ├── layout
@@ -124,13 +112,10 @@ nirvana-music-app/
 
 ```
 
----
-
 ## Screenshots
 
 *(Add 2–3 screenshots of your app here)*
 
----
 
 ## Future Improvements
 
@@ -139,7 +124,6 @@ nirvana-music-app/
 * Audio visualizer
 * Support for Spotify/Deezer APIs
 
----
 
 ## Author
 
