@@ -49,7 +49,7 @@ def root():
 @app.get("/get-folders", response_model=Folders)
 def get_folders():
     """
-    This is call at the start of the flutter app to get folders
+    This is called at the start of the flutter app to get folders or when folders is updated
     """
     folders = load_folders_from_db()
     return Folders(local_folders=folders)

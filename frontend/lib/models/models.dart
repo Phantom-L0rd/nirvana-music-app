@@ -1,7 +1,3 @@
-import 'dart:ffi';
-
-import 'package:freezed_annotation/freezed_annotation.dart';
-
 class AudioFile {
   final String id;
   final String fullPath;

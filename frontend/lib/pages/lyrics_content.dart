@@ -99,7 +99,7 @@ class _LyricsContentState extends ConsumerState<LyricsContent> {
               fit: BoxFit.cover,
             ),
           ),
-      
+
           // Blur overlay
           ClipRRect(
             borderRadius: BorderRadius.circular(6),
@@ -108,7 +108,7 @@ class _LyricsContentState extends ConsumerState<LyricsContent> {
               child: Container(color: Colors.black.withValues(alpha: 0.6)),
             ),
           ),
-      
+
           // Loading or content
           if (_isLoading)
             const Center(
@@ -134,10 +134,11 @@ class _LyricsContentState extends ConsumerState<LyricsContent> {
                       final line = lyricsFrame.lyrics[index]['line'];
                       final timestamp =
                           lyricsFrame.lyrics[index]['timestamp'] as int;
-      
+
                       final isActive =
-                          audioState.currentPosition.inMilliseconds >= timestamp;
-      
+                          audioState.currentPosition.inMilliseconds >=
+                          timestamp;
+
                       return AnimatedDefaultTextStyle(
                         duration: const Duration(milliseconds: 200),
                         style: TextStyle(
@@ -156,7 +157,11 @@ class _LyricsContentState extends ConsumerState<LyricsContent> {
                                 text: line,
                                 fontSize: isActive ? 30 : 24,
                                 colour: isActive ? Colors.white : Colors.grey,
-                                onTap: () {},
+                                onTap: () {
+                                  audioController.seek(
+                                    Duration(milliseconds: timestamp),
+                                  );
+                                },
                               ),
                             ),
                           ),

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:nirvana_desktop/models/models.dart';
 import 'package:nirvana_desktop/pages/custom_cards.dart';
 import 'package:nirvana_desktop/providers/providers.dart';

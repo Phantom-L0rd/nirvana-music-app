@@ -1,4 +1,3 @@
-import 'package:audioplayers/audioplayers.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -363,108 +362,9 @@ class _SidePanel extends StatelessWidget {
               ),
               const SizedBox(height: 12),
 
-              // IconButton(
-              //   icon: const Icon(Icons.home),
-              //   tooltip: 'Home',
-              //   onPressed: () {
-              //     context.go('/');
-              //   },
-              // ),
-              // IconButton(
-              //   icon: const Icon(Icons.library_music_rounded),
-              //   tooltip: 'All Songs',
-              //   onPressed: () {
-              //     context.go(
-              //       "/playlist",
-              //       extra: {
-              //         'playlist': notifier.corePlaylists[0],
-              //         'tracks': ref
-              //             .read(localFoldersProvider)
-              //             .getPlaylistTracks(notifier.corePlaylists[0].id),
-              //       },
-              //     );
-              //   },
-              // ),
-              // IconButton(
-              //   icon: const Icon(Icons.person_rounded),
-              //   tooltip: 'Artists',
-              //   onPressed: () {
-              //     context.go(
-              //       "/all-artists",
-              //       extra: {"artists": notifier.allArtists},
-              //     );
-              //   },
-              // ),
-              // IconButton(
-              //   icon: const Icon(Icons.album_rounded),
-              //   tooltip: 'Albums',
-              //   onPressed: () {
-              //     context.go(
-              //       '/all-albums',
-              //       extra: {"albums": notifier.allAlbums},
-              //     );
-              //   },
-              // ),
-              // IconButton(
-              //   icon: const Icon(Icons.queue_music_rounded),
-              //   tooltip: 'Playlists',
-              //   onPressed: () {
-              //     context.go('/all-playlists', extra: {"user": []});
-              //   },
-              // ),
-              // IconButton(
-              //   icon: const Icon(Icons.favorite_rounded),
-              //   tooltip: 'Favourites',
-              //   onPressed: () {
-              //     context.go(
-              //       "/playlist",
-              //       extra: {
-              //         'playlist': notifier.corePlaylists[1],
-              //         'tracks': ref
-              //             .read(localFoldersProvider)
-              //             .getPlaylistTracks(notifier.corePlaylists[1].id),
-              //       },
-              //     );
-              //   },
-              // ),
-              // IconButton(
-              //   icon: const Icon(Icons.history_rounded),
-              //   tooltip: 'Recents',
-              //   onPressed: () {
-              //     context.go(
-              //       "/playlist",
-              //       extra: {
-              //         'playlist': notifier.corePlaylists[3],
-              //         'tracks': ref
-              //             .read(localFoldersProvider)
-              //             .getPlaylistTracks(notifier.corePlaylists[3].id),
-              //       },
-              //     );
-              //   },
-              // ),
-              // IconButton(
-              //   icon: const Icon(Icons.download_rounded),
-              //   tooltip: 'Downloads',
-              //   onPressed: () {
-              //     context.go(
-              //       "/playlist",
-              //       extra: {
-              //         'playlist': notifier.corePlaylists[2],
-              //         'tracks': ref
-              //             .read(localFoldersProvider)
-              //             .getPlaylistTracks(notifier.corePlaylists[2].id),
-              //       },
-              //     );
-              //   },
-              // ),
+              
               const Spacer(),
-              // IconButton(
-              //   icon: const Icon(Icons.settings),
-              //   tooltip: 'Settings',
-              //   onPressed: () {
-              //     context.go('/settings');
-              //   },
-              // ),
+
               MenuButton(
                 menuId: 8,
                 menuIcon: Icons.settings_rounded,
@@ -812,8 +712,6 @@ class _NowPlayingPanelState extends ConsumerState<NowPlayingPanel> {
               ),
 
               const SizedBox(width: 16),
-              // Text(audioState.isShowingLyrics.toString()),
-              // Text(audioState.playlistRoute!.path),
 
               // Debug info
               Expanded(

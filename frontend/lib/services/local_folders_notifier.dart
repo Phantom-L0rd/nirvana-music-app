@@ -1,9 +1,7 @@
 // local_folders_notifier.dart
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:nirvana_desktop/models/models.dart';
-import 'package:nirvana_desktop/pages/custom_cards.dart';
 import 'package:nirvana_desktop/services/api_service.dart';
 
 class LocalFoldersNotifier extends ChangeNotifier {

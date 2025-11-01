@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:nirvana_desktop/models/models.dart';
 import 'package:nirvana_desktop/providers/providers.dart';

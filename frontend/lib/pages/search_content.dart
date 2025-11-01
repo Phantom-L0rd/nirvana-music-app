@@ -43,18 +43,18 @@ class _SearchResultsPageState extends ConsumerState<SearchResultsPage> {
 
     return CustomScrollView(
       slivers: [
-        SliverToBoxAdapter(
-          child: Center(
-            child: Column(
-              spacing: 4,
-              children: [
-                Text("isLoading: ${searchState.isLoading}"),
-                Text("error: ${searchState.error}"),
-                Text("query: ${searchState.query}"),
-              ],
-            ),
-          ),
-        ),
+        // SliverToBoxAdapter(
+        //   child: Center(
+        //     child: Column(
+        //       spacing: 4,
+        //       children: [
+        //         Text("isLoading: ${searchState.isLoading}"),
+        //         Text("error: ${searchState.error}"),
+        //         Text("query: ${searchState.query}"),
+        //       ],
+        //     ),
+        //   ),
+        // ),
 
         if (searchState.tracks.isNotEmpty)
           SliverToBoxAdapter(
