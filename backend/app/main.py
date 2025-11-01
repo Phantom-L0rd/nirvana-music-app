@@ -74,7 +74,7 @@ async def add_song_to_playlist(request: AddSongRequest):
         return {"message" : "Song added to playlist successfully"}
     
     return {"message" : "Song already exists in playlist"}
-    # return {"message" : f"playlistid: {request.playlist_id} and Song: {request.song_id}"}
+
 
 
 @app.post("/remove-folder")
@@ -95,28 +95,6 @@ async def rescan():
         all_seen_ids.update(scan_folder(folder))
     
     cleanup_removed_songs(all_seen_ids)
-
-
-
-#     new_folders = request.local_folders
-#     if set(new_folders) != set(scanned_folders):
-#         scanned_folders = new_folders
-#     if not scanned_folders:
-#         raise HTTPException(status_code=400, detail="No folders scanned yet")
-
-#     clear_songs_db()
-#     clear_folders_db()
-#     cached_audio_files = scan_folders(scanned_folders)
-#     save_songs_to_db(cached_audio_files)
-#     save_folders_to_db(scanned_folders)
-#     albums = load_albums_from_db()
-#     artists = generate_artists(albums)
-
-#     return cached_audio_files
-
-# @app.get("/test-song", response_model=AudioFile)
-# def send_test_song():
-#     return single_song()
 
 @app.get("/get-album-of-the-day", response_model=Album)
 def send_album_of_the_day():
