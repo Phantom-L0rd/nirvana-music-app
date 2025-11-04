@@ -7,6 +7,7 @@ import 'package:nirvana_desktop/services/api_service.dart';
 class LocalFoldersNotifier extends ChangeNotifier {
   List<String> _localFolders = [];
   String _syncMessage = '';
+  String _error = '';
   List<AudioFile> _allSongs = [];
   Album _albumOfTheDay = Album(
     id: "",
@@ -34,6 +35,7 @@ class LocalFoldersNotifier extends ChangeNotifier {
   List<String> get localFolders => _localFolders;
   List<AudioFile> get allSongs => _allSongs;
   String get syncMessage => _syncMessage;
+  String get error => _error;
   bool get isSyncing => _isSyncing;
   // AudioFile get testSong => _testSong;
 
@@ -279,15 +281,22 @@ class LocalFoldersNotifier extends ChangeNotifier {
   }
 
   Future<List<AudioFile>> getPlaylistTracks(int id) async {
-    if (id == 1) {
-      return _allSongs;
-    } else {
+    if (id == 1) return _allSongs;
+
+    if (id == 4) {
       try {
-        final response = await ApiService.getPlaylistSongs(id);
+        final response = await ApiService.getRecents();
         return response;
       } catch (_) {
         return [];
       }
+    }
+
+    try {
+      final response = await ApiService.getPlaylistSongs(id);
+      return response;
+    } catch (_) {
+      return [];
     }
   }
 
@@ -365,5 +374,30 @@ class LocalFoldersNotifier extends ChangeNotifier {
     } catch (_) {
       return "something went wrong";
     }
+  }
+
+  Future<void> deletePlaylist(int id) async {
+    _isSyncing = true;
+    notifyListeners();
+    try {
+      final result = await ApiService.deletePlaylist(id);
+      if (result.success) {
+        _userPlaylists.removeWhere((p) => p.id == id); // update state
+        _syncMessage = result.message;
+      } else {
+        _error = result.message;
+      }
+    } catch (e) {
+      _error = "Something went wrong: $e";
+    } finally {
+      _isSyncing = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> addToRecents(String songId) async {
+    try {
+      await ApiService.addToRecents(songId);
+    } catch (_) {}
   }
 }

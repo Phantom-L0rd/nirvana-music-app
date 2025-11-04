@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:nirvana_desktop/models/models.dart';
 import 'package:nirvana_desktop/pages/custom_cards.dart';
 import 'package:nirvana_desktop/providers/audio_provider.dart';
@@ -12,12 +13,12 @@ import 'package:nirvana_desktop/providers/providers.dart';
 
 class PlaylistContent extends ConsumerStatefulWidget {
   final Playlist playlist;
-  final bool isCustomPlaylist;
+  final PlaylistType? type;
 
   const PlaylistContent({
     super.key,
     required this.playlist,
-    this.isCustomPlaylist = false,
+    this.type = PlaylistType.system,
   });
 
   @override
@@ -259,6 +260,9 @@ class _PlaylistContentState extends ConsumerState<PlaylistContent> {
                                               widget.playlist.id.toString()) {
                                         audioController.togglePlayPause();
                                       } else {
+                                        debugPrint(
+                                          _filteredSongs.length.toString(),
+                                        );
                                         audioController.setPlaylist(
                                           _filteredSongs,
                                           type: 'Playlist',
@@ -267,7 +271,7 @@ class _PlaylistContentState extends ConsumerState<PlaylistContent> {
                                             '/playlist',
                                             extra: {
                                               'playlist': widget.playlist,
-                                              'tracks': _tracks,
+                                              'type': widget.type,
                                             },
                                           ),
                                         );
@@ -287,22 +291,106 @@ class _PlaylistContentState extends ConsumerState<PlaylistContent> {
                               ),
                               const SizedBox(height: 4),
                               Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  if (widget.isCustomPlaylist)
-                                    IconButton(
-                                      onPressed: () {},
-                                      icon: Icon(Icons.add_rounded, size: 20),
-                                    ),
                                   SearchToggle(
                                     onSearchChanged: _onSearchChanged,
                                   ),
                                   const Spacer(),
-                                  SongsSorterWidget(
-                                    songs: _tracks,
-                                    onSorted: (sorted) => setState(() {
-                                      _filteredSongs = sorted;
-                                    }),
-                                  ),
+                                  if (widget.playlist.id != 4)
+                                    SongsSorterWidget(
+                                      songs: _tracks,
+                                      onSorted: (sorted) => setState(() {
+                                        _filteredSongs = sorted;
+                                      }),
+                                    ),
+                                  if (widget.type == PlaylistType.user)
+                                    const SizedBox(width: 12),
+
+                                  if (widget.type == PlaylistType.user)
+                                    IconButton(
+                                      onPressed: () {
+                                        showDialog(
+                                          context: context,
+                                          builder: (context) => AlertDialog(
+                                            title: Text(
+                                              "Delete this playlist?",
+                                            ),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () {
+                                                  Navigator.of(context).pop();
+                                                },
+                                                child: Text(
+                                                  "Cancel",
+                                                  style: TextStyle(
+                                                    fontSize: 16,
+                                                  ),
+                                                ),
+                                              ),
+                                              TextButton(
+                                                style: ButtonStyle(
+                                                  backgroundColor:
+                                                      WidgetStatePropertyAll<
+                                                        Color
+                                                      >(
+                                                        Theme.of(context)
+                                                            .colorScheme
+                                                            .primaryContainer,
+                                                      ),
+                                                ),
+                                                onPressed: () async {
+                                                  await ref
+                                                      .read(
+                                                        localFoldersProvider
+                                                            .notifier,
+                                                      )
+                                                      .deletePlaylist(
+                                                        widget.playlist.id,
+                                                      );
+                                                  if (!context.mounted) return;
+
+                                                  Navigator.of(context).pop();
+
+                                                  context.go('/all-playlists');
+
+                                                  WidgetsBinding.instance
+                                                      .addPostFrameCallback((
+                                                        _,
+                                                      ) {
+                                                        if (mounted) {
+                                                          ScaffoldMessenger.of(
+                                                            context,
+                                                          ).showSnackBar(
+                                                            SnackBar(
+                                                              content: Text(
+                                                                ref
+                                                                    .watch(
+                                                                      localFoldersProvider,
+                                                                    )
+                                                                    .syncMessage,
+                                                              ),
+                                                            ),
+                                                          );
+                                                        }
+                                                      });
+                                                },
+                                                child: Text(
+                                                  "Confirm",
+                                                  style: TextStyle(
+                                                    fontSize: 16,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                      icon: Icon(
+                                        Icons.delete_outline_rounded,
+                                        size: 20,
+                                      ),
+                                    ),
                                 ],
                               ),
                             ],
@@ -313,12 +401,13 @@ class _PlaylistContentState extends ConsumerState<PlaylistContent> {
                   ],
                 ),
               ),
-              AlphabetRow(
-                songs: _tracks,
-                onFilter: (filtered) => setState(() {
-                  _filteredSongs = filtered;
-                }),
-              ),
+              if (widget.playlist.id != 4)
+                AlphabetRow(
+                  songs: _tracks,
+                  onFilter: (filtered) => setState(() {
+                    _filteredSongs = filtered;
+                  }),
+                ),
 
               ConstrainedBox(
                 constraints: BoxConstraints(maxWidth: 800),
@@ -377,7 +466,7 @@ class _PlaylistContentState extends ConsumerState<PlaylistContent> {
                               '/playlist',
                               extra: {
                                 'playlist': widget.playlist,
-                                'tracks': _tracks,
+                                'type': widget.type,
                               },
                             ),
                           ),

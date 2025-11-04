@@ -66,7 +66,7 @@ class MyApp extends StatelessWidget {
                 }
               }
 
-              return AppShell(child: child, history: history);
+              return AppShell( history: history, child: child,);
             },
           );
         },
@@ -100,9 +100,9 @@ class MyApp extends StatelessWidget {
               // final List<AudioFile> tracks = (extra['tracks'] as List)
               //     .map((e) => AudioFile.fromJson(e as Map<String, dynamic>))
               //     .toList();
-              final bool? isUserPlaylist = extra['isUser'];
+              final PlaylistType? type = extra['type'];
 
-              return PlaylistContent(playlist: playlist, isCustomPlaylist: isUserPlaylist ?? false,);
+              return PlaylistContent(playlist: playlist, type: type,);
             },
           ),
           GoRoute(

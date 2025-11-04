@@ -1,6 +1,7 @@
 // lib/providers/audio_provider.dart
 import 'dart:math';
 
+import 'package:flutter/material.dart';
 import 'package:nirvana_desktop/models/models.dart';
 import 'package:nirvana_desktop/providers/providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -16,7 +17,7 @@ class AudioController extends _$AudioController {
   late AudioPlayer _player; // The actual audio player instance
   bool _hasCompletedTrack = false;
   List<int> _shuffledIndices = [];
-  final yt = YoutubeExplode();
+  bool _hasAddedToRecents = false;
 
   @override
   AudioState build() {
@@ -44,11 +45,23 @@ class AudioController extends _$AudioController {
       );
     });
 
-    // Listen to position changes (for progress bar updates)
-    _player.onPositionChanged.listen((Duration position) {
+    // Listen to position changes (for progress bar updates and to add song to recently played)
+    _player.onPositionChanged.listen((Duration position) async {
       state = state.copyWith(currentPosition: position);
       if (position.inSeconds < 2 && _hasCompletedTrack) {
         _hasCompletedTrack = false;
+      }
+
+      // Add to recents once 15 seconds have passed
+      if (position.inSeconds >= 15 && !_hasAddedToRecents) {
+        _hasAddedToRecents = true; // ensure it's only added once per song
+        final currentTrack = state.currentTrack;
+        if (currentTrack != null) {
+          debugPrint("added to recently played");
+          await ref
+              .read(localFoldersProvider.notifier)
+              .addToRecents(currentTrack.id);
+        }
       }
     });
 
@@ -160,10 +173,7 @@ class AudioController extends _$AudioController {
 
       await _player.play(UrlSource(url));
 
-      state = state.copyWith(
-        currentTrack: track,
-        isLoading: false,
-      );
+      state = state.copyWith(currentTrack: track, isLoading: false);
     } catch (e) {
       state = state.copyWith(error: e.toString(), isLoading: false);
     }
@@ -354,6 +364,7 @@ class AudioController extends _$AudioController {
       await _player.play(DeviceFileSource(song.fullPath));
 
       _hasCompletedTrack = false;
+      _hasAddedToRecents = false;
 
       state = state.copyWith(isLoading: false, currentPosition: Duration.zero);
 

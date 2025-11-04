@@ -61,6 +61,25 @@ class ApiService {
     }
   }
 
+  static Future<ApiResponse> deletePlaylist(int id) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/delete-playlist?id=$id'),
+      );
+
+      if (response.statusCode == 200) {
+        return ApiResponse.fromJson(jsonDecode(response.body));
+      } else {
+        return ApiResponse(
+          success: false,
+          message: "Failed with ${response.statusCode}",
+        );
+      }
+    } catch (e) {
+      return ApiResponse(success: false, message: "Network error: $e");
+    }
+  }
+
   static Future<String> addSongToPlaylist(int playlistId, String songId) async {
     try {
       final response = await http.post(
@@ -78,6 +97,18 @@ class ApiService {
     } catch (e) {
       return 'Network error: $e';
     }
+  }
+
+  static Future<void> addToRecents(String songId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/add-to-recents?id=$songId'),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to add recent');
+      }
+    } catch (_) {}
   }
 
   static Future<bool> rescanFolders() async {
@@ -99,6 +130,21 @@ class ApiService {
         return decoded.map((json) => AudioFile.fromJson(json)).toList();
       } else {
         throw Exception('Failed to sync folders: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  static Future<List<AudioFile>> getRecents() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/get-recents'));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> decoded = jsonDecode(response.body);
+        return decoded.map((json) => AudioFile.fromJson(json)).toList();
+      } else {
+        throw Exception('Failed to get reccent rongs: ${response.statusCode}');
       }
     } catch (e) {
       throw Exception('Network error: $e');
@@ -381,4 +427,5 @@ class ApiService {
       throw Exception('Network error: $e');
     }
   }
+
 }

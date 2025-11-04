@@ -16,41 +16,43 @@ class HomeContent extends StatelessWidget {
         if (foldersNotifier.isSyncing) {
           return Center(child: CircularProgressIndicator());
         }
-        return SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                AlbumOfTheDay(
-                  album: foldersNotifier.albumOfTheDay,
-                ),
+        if (foldersNotifier.localFolders.isNotEmpty) {
+          return SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  AlbumOfTheDay(album: foldersNotifier.albumOfTheDay),
 
-                const SizedBox(height: 16),
-                AlbumScrollSection(albums: foldersNotifier.albumsForYou),
-                const SizedBox(height: 16),
-                ArtistScrollSection(artists: foldersNotifier.artistsForYou),
-                const SizedBox(height: 16),
-                // MoodScrollSection(),
-                // const SizedBox(height: 16),
-                // Text(foldersNotifier.localFolders.length.toString()),
-                // const SizedBox(height: 16),
-                // ListView.builder(
-                //   itemCount: songs.length,
-                //   shrinkWrap: true,
-                //   physics: NeverScrollableScrollPhysics(),
-                //   itemBuilder: (context, index) {
-                //     final song = songs[index];
-                //     return ListTile(
-                //       title: Text(song.title ?? "unkown"),
-                //       subtitle: Text(song.artist ?? "unkown"),
-                //     );
-                //   },
-                // ),
-              ],
+                  const SizedBox(height: 16),
+                  AlbumScrollSection(albums: foldersNotifier.albumsForYou),
+                  const SizedBox(height: 16),
+                  ArtistScrollSection(artists: foldersNotifier.artistsForYou),
+                  const SizedBox(height: 16),
+                  // MoodScrollSection(),
+                  // const SizedBox(height: 16),
+                  // Text(foldersNotifier.localFolders.length.toString()),
+                  // const SizedBox(height: 16),
+                  // ListView.builder(
+                  //   itemCount: songs.length,
+                  //   shrinkWrap: true,
+                  //   physics: NeverScrollableScrollPhysics(),
+                  //   itemBuilder: (context, index) {
+                  //     final song = songs[index];
+                  //     return ListTile(
+                  //       title: Text(song.title ?? "unkown"),
+                  //       subtitle: Text(song.artist ?? "unkown"),
+                  //     );
+                  //   },
+                  // ),
+                ],
+              ),
             ),
-          ),
-        );
+          );
+        } else {
+          return Center(child: Text("Welcome to Nirvana Music App!"));
+        }
       },
     );
   }

@@ -12,6 +12,7 @@ import 'package:intl/intl.dart';
 import 'package:nirvana_desktop/models/models.dart';
 import 'package:nirvana_desktop/providers/audio_provider.dart';
 import 'package:nirvana_desktop/providers/audio_state.dart';
+import 'package:nirvana_desktop/providers/download_provider.dart';
 import 'package:nirvana_desktop/providers/providers.dart';
 
 class MenuButton extends ConsumerStatefulWidget {
@@ -462,7 +463,7 @@ class _PlaylistCardState extends State<PlaylistCard> {
             onTap: () {
               context.go(
                 "/playlist",
-                extra: {'playlist': widget.playlist, 'isUser': true},
+                extra: {'playlist': widget.playlist, 'type': PlaylistType.user},
               );
             },
             child: SizedBox(
@@ -530,6 +531,7 @@ class SongCard extends ConsumerStatefulWidget {
   final int? songNum;
   final AudioFile song;
   final VoidCallback onTap;
+  final String? lyricId;
 
   const SongCard({
     super.key,
@@ -539,6 +541,7 @@ class SongCard extends ConsumerStatefulWidget {
     this.songNum,
     required this.song,
     required this.onTap,
+    this.lyricId,
   });
 
   @override
@@ -563,9 +566,22 @@ class _SongCardState extends ConsumerState<SongCard> {
     // READ the controller - use this to call methods
     final audioController = ref.read(audioControllerProvider.notifier);
 
+    final downloadNotifier = ref.watch(downloadNotifierProvider);
+
     final isCurrentlyPlaying = audioState.currentTrack != null
         ? audioState.currentTrack!.id == widget.song.id
         : false;
+
+    ref.listen<DownloadNotifier>(downloadNotifierProvider, (prev, next) {
+      if (next.error != null) {
+        SnackBar(
+          content: Text(
+            'Error: ${downloadNotifier.error}',
+            style: const TextStyle(color: Colors.red),
+          ),
+        );
+      }
+    });
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovering = true),
@@ -700,10 +716,37 @@ class _SongCardState extends ConsumerState<SongCard> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                MoreOptionsWidget(
-                  playlistIds: widget.song.playlistIds,
-                  songId: widget.song.id,
-                ),
+                if (widget.song.type == SongType.online &&
+                    downloadNotifier.isDownloading)
+                  LinearProgressIndicator(
+                    value: downloadNotifier.progress / 100,
+                  ),
+                if (widget.song.type == SongType.online)
+                  Text(downloadNotifier.stage),
+                widget.song.type == SongType.local
+                    ? MoreOptionsWidget(
+                        playlistIds: widget.song.playlistIds,
+                        songId: widget.song.id,
+                      )
+                    : IconButton(
+                        onPressed: downloadNotifier.isDownloading
+                            ? downloadNotifier.cancelDownload
+                            : () {
+                                final OnlineTrack songData = OnlineTrack(
+                                  id: widget.song.id,
+                                  track: widget.song,
+                                  lyricId: widget.lyricId,
+                                );
+                                ref
+                                    .read(downloadNotifierProvider)
+                                    .startDownload(songData);
+                              },
+                        icon: Icon(
+                          downloadNotifier.isDownloading
+                              ? Icons.close_rounded
+                              : Icons.download_rounded,
+                        ),
+                      ),
                 // IconButton(
                 //   onPressed: () {},
                 //   hoverColor: Colors.transparent,
@@ -735,6 +778,7 @@ class MoreOptionsWidget extends StatelessWidget {
     return Consumer(
       builder: (context, ref, _) {
         final notifier = ref.read(localFoldersProvider);
+        final playlists = notifier.userPlaylists;
         return PopupMenuButton<MoreOptions>(
           tooltip: 'More Options',
           itemBuilder: (context) => <PopupMenuEntry<MoreOptions>>[
@@ -776,8 +820,54 @@ class MoreOptionsWidget extends StatelessWidget {
                 ],
               ),
             ),
-            const PopupMenuItem(
+            PopupMenuItem(
               value: MoreOptions.addToPlaylist,
+              onTap: () {
+                showModalBottomSheet(
+                  context: context,
+                  // backgroundColor: Colors.transparent,
+                  isScrollControlled: true,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(6),
+                    ),
+                  ),
+                  builder: (context) {
+                    return ListView(
+                      shrinkWrap: true,
+                      children: playlists.map((playlist) {
+                        return Padding(
+                          padding: const EdgeInsets.all(4.0),
+                          child: ListTile(
+                            leading: const Icon(Icons.queue_music),
+                            title: Text(playlist.name),
+                            onTap: () async {
+                              // Add to playlist logic
+                              final response = await notifier.addSongToPlaylist(
+                                playlist.id,
+                                songId,
+                              );
+
+                              if (!context.mounted) return;
+
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  shape: StadiumBorder(),
+                                  elevation: 12,
+                                  padding: EdgeInsets.all(8),
+                                  content: Center(child: Text(response)),
+                                ),
+                              );
+
+                              Navigator.pop(context);
+                            },
+                          ),
+                        );
+                      }).toList(),
+                    );
+                  },
+                );
+              },
               child: Row(
                 spacing: 8,
                 children: [

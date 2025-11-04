@@ -55,7 +55,6 @@ class _SearchResultsPageState extends ConsumerState<SearchResultsPage> {
         //     ),
         //   ),
         // ),
-
         if (searchState.tracks.isNotEmpty)
           SliverToBoxAdapter(
             child: Center(
@@ -234,6 +233,7 @@ class _SearchResultsPageState extends ConsumerState<SearchResultsPage> {
                                   ),
                                   child: SongCard(
                                     song: onlineTrack.track,
+                                    lyricId: onlineTrack.lyricId,
                                     onTap: () async {
                                       final url = await ApiService.getStreamUrl(
                                         onlineTrack.id,

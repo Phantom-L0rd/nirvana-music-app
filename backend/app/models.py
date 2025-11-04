@@ -23,6 +23,7 @@ class AudioFile(BaseModel):
     trackNum: Optional[int] = None
     date_added: Optional[str] = None
     playlist_ids: Optional[List[int]] = None
+    is_local: Optional[bool] = True
 
 class OnlineTrack(BaseModel):
     id: str
@@ -62,3 +63,7 @@ class LyricsFrame(BaseModel):
 class AddSongRequest(BaseModel):
     playlist_id: int
     song_id: str
+
+class ApiResponse(BaseModel):
+    success: bool
+    message: str

@@ -252,7 +252,7 @@ def insert_song(id,full_path,duration,artist,title,album,cover_art,year,track_nu
 
     # 1. Ensure artist
     artist_id = get_or_create_artist(artist or "Unknown Artist")
-
+    # print("here", artist, artist_id)
     # 2. Ensure album
     album_id = get_or_create_album(
         title=album or "Unknown Album",
@@ -261,7 +261,7 @@ def insert_song(id,full_path,duration,artist,title,album,cover_art,year,track_nu
         year=year,
         album_art_path=cover_art
     )
-
+    # print("here", album, album_id)
     conn = get_connection()
     cursor = conn.cursor()
     
@@ -287,9 +287,9 @@ def insert_song(id,full_path,duration,artist,title,album,cover_art,year,track_nu
         track_num,
     ))
 
-    
+    # print(folder[:-1])
     # 4. get folder id
-    cursor.execute("SELECT id FROM folders WHERE path = ?", (folder ,))
+    cursor.execute("SELECT id FROM folders WHERE path = ?", (folder,))
     folder_id = cursor.fetchone()[0]
 
     # 5. Link song to folder
@@ -778,6 +778,20 @@ def add_song_to_playlist_db(playlist_id: int, song_id: str) -> bool:
     conn.close()
     return True
 
+def add_song_to_recents_db(song_id: str):
+    conn = get_connection()
+    cursor = conn.cursor()
+    
+    time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    cursor.execute("""
+        INSERT INTO recently_played (song_id, played_at)
+        VALUES (?, ?)
+    """, (song_id, time))
+
+    conn.commit()
+    conn.close()
+
+
 
 def get_last_playlist_db() -> Playlist:
     conn = get_connection()
@@ -863,6 +877,86 @@ def get_playlist_songs(id: int) -> List[AudioFile]:
             id=row[0],
             full_path=row[1], 
             duration=row[2],
+            title=row[6],
+            album=Album(
+                id=row[7],
+                name=row[8],
+                artist=Artist(
+                    id=row[3],
+                    name=row[4],
+                    artwork=row[5]
+                ),
+                cover_art=row[9],
+                year=row[10],
+                genre=row[11]
+            ), 
+            trackNum=row[12],
+            date_added=row[13],
+            playlist_ids= list(map(int,row[14].split(','))) if row[14] else None
+        ))
+
+    conn.close()
+    return songs
+
+
+def delete_playlist_db(id: int):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        DELETE FROM playlists WHERE id = ?
+    """, (id,))
+
+    conn.commit()
+    conn.close
+
+
+def get_recents_db() -> List[AudioFile]:
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        WITH playlist_ids_cte AS (
+            SELECT song_id, group_concat(playlist_id ORDER BY playlist_id, ', ') AS playlist_ids FROM playlist_songs
+            GROUP BY song_id
+        )
+        SELECT 
+            s.id,
+            s.file_path,
+            s.duration,
+            s.artist_id,
+            ar.name AS artist,
+            ar.artwork,
+            s.title,
+            s.album_id,
+            al.title AS album,
+            al.album_art_path AS cover_art,
+            al.year,
+            al.genre,
+            s.track_number,
+            MIN(fs.added_at) AS added_at,
+            pic.playlist_ids
+        FROM songs s
+        JOIN artists ar ON s.artist_id = ar.id
+        LEFT JOIN albums al ON s.album_id = al.id
+        JOIN folder_songs fs ON s.id = fs.song_id
+        JOIN folders f ON fs.folder_id = f.id
+        LEFT JOIN playlist_ids_cte pic ON s.id = pic.song_id
+        JOIN recently_played rp ON s.id = rp.song_id
+        WHERE f.active = 1
+        GROUP BY rp.id
+        ORDER BY rp.id DESC
+        LIMIT 50;
+    """)
+
+    rows = cursor.fetchall()
+
+    songs = []
+    for row in rows:
+        songs.append(AudioFile(
+            id=row[0],
+            full_path=row[1], 
+            duration=row[2],  
             title=row[6],
             album=Album(
                 id=row[7],

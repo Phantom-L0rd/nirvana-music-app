@@ -1,12 +1,14 @@
 # app/main.py
+import asyncio
 import os
 import time
 from fastapi.staticfiles import StaticFiles
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket
+import json
 from typing import List
-from app.models import AddSongRequest, Album, Artist, AudioFile, FolderRequest, Folders, IdRequest, LyricsFrame, Playlist
-from app.utils import get_album_of_the_day, get_lyrics, get_stream_url, get_top_albums, get_top_artists, get_yt_search, scan_folder
-from app.db import add_folder_to_db, add_playlist_db, add_song_to_playlist_db, cleanup_removed_songs, deactivate_folder, get_album, get_album_songs, get_albums_from_db, get_artist, get_artist_albums, get_artist_songs,  get_artists_from_db, get_last_playlist_db, get_playlist_songs, get_songs_from_db, get_user_playlists_db, initialize_db, is_first_startup, load_folders_from_db, load_core_playlists_db,mark_startup_complete
+from app.models import AddSongRequest, Album, ApiResponse, Artist, AudioFile, FolderRequest, Folders, IdRequest, LyricsFrame, OnlineTrack, Playlist
+from app.utils import download_song, get_album_of_the_day, get_lyrics, get_stream_url, get_top_albums, get_top_artists, get_yt_search, scan_folder
+from app.db import add_folder_to_db, add_playlist_db, add_song_to_playlist_db, add_song_to_recents_db, cleanup_removed_songs, deactivate_folder, delete_playlist_db, get_album, get_album_songs, get_albums_from_db, get_artist, get_artist_albums, get_artist_songs,  get_artists_from_db, get_last_playlist_db, get_playlist_songs, get_recents_db, get_songs_from_db, get_user_playlists_db, initialize_db, is_first_startup, load_folders_from_db, load_core_playlists_db,mark_startup_complete
 from contextlib import asynccontextmanager
 
 
@@ -75,6 +77,17 @@ async def add_song_to_playlist(request: AddSongRequest):
     
     return {"message" : "Song already exists in playlist"}
 
+@app.post("/add-to-recents")
+def add_song_to_recents(id: str):
+    add_song_to_recents_db(song_id=id)
+
+@app.post("/delete-playlist")
+async def delete_playlist(id: int):
+    delete_playlist_db(id)
+    return {
+        "success" : True,
+        "message" : "Playlist Deleted"
+    }
 
 
 @app.post("/remove-folder")
@@ -99,7 +112,6 @@ async def rescan():
 @app.get("/get-album-of-the-day", response_model=Album)
 def send_album_of_the_day():
     albums = get_albums_from_db()
-    # time.sleep(5)
     return get_album_of_the_day(albums)
 
 @app.get("/get-albums-for-you", response_model=List[Album])
@@ -116,6 +128,9 @@ def send_artists_for_you():
 def send_all_songs():
     return get_songs_from_db()
 
+@app.get("/get-recents", response_model=List[AudioFile])
+def send_recents():
+    return get_recents_db()
 
 @app.get("/get-all-artists", response_model=List[Artist])
 def send_all_artist():
@@ -161,6 +176,10 @@ def send_search_results(q: str):
 def send_stream_info(video_id: str):
     return get_stream_url(video_id)
 
+@app.post("/download", response_model=ApiResponse)
+async def download(song: OnlineTrack):
+    return download_song(song)
+
 @app.get('/get-last-playlist', response_model=Playlist)
 def send_last_playlist():
     return get_last_playlist_db()
@@ -172,3 +191,28 @@ def send_user_playlists():
 @app.get("/get-playlist-songs", response_model=List[AudioFile])
 def send_album_songs(id: int):
     return get_playlist_songs(id)
+
+@app.websocket("/ws/download")
+async def websocket_download(websocket: WebSocket):
+    await websocket.accept()
+
+    data = await websocket.receive_json()
+    song = data["song"]
+
+    def progress_hook(d):
+        if d['status'] == 'downloading':
+            percent = d.get('_percent_str', '0%').replace('%', '')
+            asyncio.create_task(websocket.send_text(json.dumps({
+                "stage": "downloading",
+                "progress": float(percent)
+            })))
+        elif d['status'] == 'finished':
+            asyncio.create_task(websocket.send_text(json.dumps({
+                "stage": "processing",
+                "progress": 100
+            })))
+
+    download_song(song,progress_hook)
+
+    await websocket.send_json({"stage": "done", "progress": 100})
+    await websocket.close()

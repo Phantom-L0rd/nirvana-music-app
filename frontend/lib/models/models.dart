@@ -1,3 +1,19 @@
+class ApiResponse {
+  final bool success;
+  final String message;
+
+  ApiResponse({required this.success, required this.message});
+
+  factory ApiResponse.fromJson(Map<String, dynamic> json) {
+    return ApiResponse(
+      success: json['success'] ?? false,
+      message: json['message'] ?? '',
+    );
+  }
+}
+
+enum SongType { local, online }
+
 class AudioFile {
   final String id;
   final String fullPath;
@@ -7,6 +23,7 @@ class AudioFile {
   final int? trackNum;
   final String? dateAdded; // ISO 8601 string
   final List<int> playlistIds;
+  final SongType type;
 
   AudioFile({
     required this.id,
@@ -17,6 +34,7 @@ class AudioFile {
     this.trackNum,
     this.dateAdded,
     required this.playlistIds,
+    this.type = SongType.local,
   });
 
   factory AudioFile.fromJson(Map<String, dynamic> json) {
@@ -29,6 +47,7 @@ class AudioFile {
       trackNum: json['trackNum'],
       dateAdded: json['date_added'],
       playlistIds: List<int>.from(json['playlist_ids'] ?? []),
+      type: json['is_local'] ? SongType.local : SongType.online,
     );
   }
 
@@ -42,6 +61,7 @@ class AudioFile {
       'trackNum': trackNum,
       'date_added': dateAdded,
       'playlist_ids': playlistIds,
+      'is_local': type == SongType.local,
     };
   }
 }
@@ -102,17 +122,19 @@ class Artist {
   }
 }
 
+enum PlaylistType { system, user }
+
 class Playlist {
   final int id;
   final String name;
-  final bool isSystem;
+  final PlaylistType type;
   final String createdAt;
   final List<String> artwork; // nullable list of strings
 
   Playlist({
     required this.id,
     required this.name,
-    required this.isSystem,
+    required this.type,
     required this.createdAt,
     required this.artwork,
   });
@@ -121,7 +143,7 @@ class Playlist {
     return Playlist(
       id: json['id'],
       name: json['name'],
-      isSystem: json['is_system'],
+      type: json['is_system'] ? PlaylistType.system : PlaylistType.user,
       createdAt: json['created_at'],
       artwork: List<String>.from(json['artwork'] ?? []),
     );
@@ -131,7 +153,7 @@ class Playlist {
     return {
       'id': id,
       'name': name,
-      'is_system': isSystem,
+      'is_system': type == PlaylistType.system,
       'created_at': createdAt,
       'artwork': artwork,
     };

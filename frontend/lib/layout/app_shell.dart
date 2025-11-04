@@ -272,9 +272,7 @@ class _SidePanel extends StatelessWidget {
                 onTap: () {
                   context.go(
                     "/playlist",
-                    extra: {
-                      'playlist': notifier.corePlaylists[0],
-                    },
+                    extra: {'playlist': notifier.corePlaylists[0]},
                   );
                   ref.read(menuController.notifier).state = 1;
                 },
@@ -323,9 +321,7 @@ class _SidePanel extends StatelessWidget {
                 onTap: () {
                   context.go(
                     "/playlist",
-                    extra: {
-                      'playlist': notifier.corePlaylists[1],
-                    },
+                    extra: {'playlist': notifier.corePlaylists[1]},
                   );
                   ref.read(menuController.notifier).state = 5;
                 },
@@ -338,9 +334,7 @@ class _SidePanel extends StatelessWidget {
                 onTap: () {
                   context.go(
                     "/playlist",
-                    extra: {
-                      'playlist': notifier.corePlaylists[2],
-                    },
+                    extra: {'playlist': notifier.corePlaylists[2]},
                   );
                   ref.read(menuController.notifier).state = 6;
                 },
@@ -353,16 +347,13 @@ class _SidePanel extends StatelessWidget {
                 onTap: () {
                   context.go(
                     "/playlist",
-                    extra: {
-                      'playlist': notifier.corePlaylists[3],
-                    },
+                    extra: {'playlist': notifier.corePlaylists[3]},
                   );
                   ref.read(menuController.notifier).state = 7;
                 },
               ),
               const SizedBox(height: 12),
 
-              
               const Spacer(),
 
               MenuButton(
@@ -824,30 +815,6 @@ class _NowPlayingPanelState extends ConsumerState<NowPlayingPanel> {
   }
 }
 
-class LyricsBottomModal extends StatelessWidget {
-  const LyricsBottomModal({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return DraggableScrollableSheet(
-      initialChildSize: 0.8,
-      minChildSize: 0.3,
-      maxChildSize: 0.95,
-      builder: (context, scrollController) {
-        return Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
-          ),
-          child: Center(
-            child: Text("OOPS! There is no lyrics currently available."),
-          ),
-        );
-      },
-    );
-  }
-}
-
 class QueueBottomModal extends ConsumerStatefulWidget {
   const QueueBottomModal({super.key});
 
@@ -871,39 +838,32 @@ class _QueueBottomModalState extends ConsumerState<QueueBottomModal> {
             color: Theme.of(context).colorScheme.surface,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
           ),
-          child: DefaultTabController(
-            length: 2,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: const Text(
+                  "Now Playing:",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
 
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 8),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                  child: const Text(
-                    "Now Playing:",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: audioState.currentTrack != null
+                    ? SongCard(song: audioState.currentTrack!, onTap: () {})
+                    : SizedBox(),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: const Text(
+                  "Next:",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(height: 8),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                  child: audioState.currentTrack != null
-                      ? SongCard(song: audioState.currentTrack!, onTap: () {})
-                      : SizedBox(),
-                ),
-                const SizedBox(height: 8),
-                TabBar(
-                  tabs: [
-                    Tab(text: "Queue"),
-                    Tab(text: "Recently Played"),
-                  ],
-                ),
-                Expanded(
-                  child: TabBarView(children: [QueuePanel(), RecentPanel()]),
-                ),
-              ],
-            ),
+              ),
+              Expanded(child: QueuePanel()),
+            ],
           ),
         );
       },
@@ -966,19 +926,5 @@ class _QueuePanelState extends ConsumerState<QueuePanel> {
             },
           )
         : Center(child: const Text("There is no song in queue"));
-  }
-}
-
-class RecentPanel extends StatefulWidget {
-  const RecentPanel({super.key});
-
-  @override
-  State<RecentPanel> createState() => _RecentPanelState();
-}
-
-class _RecentPanelState extends State<RecentPanel> {
-  @override
-  Widget build(BuildContext context) {
-    return Center(child: Text("Recently Played"));
   }
 }

@@ -53,6 +53,7 @@ dependencies:
   freezed_annotation: ^2.4.1
   youtube_explode_dart: ^2.5.2
   audio_wave: ^0.1.5
+  web_socket_channel: ^3.0.3
   # youtube_explode_dart_redux: ^1.14.3
   # youtube_explode_dart:
   #   git:

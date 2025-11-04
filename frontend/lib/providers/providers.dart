@@ -1,7 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nirvana_desktop/models/models.dart';
+import 'package:nirvana_desktop/providers/download_provider.dart';
 import 'package:nirvana_desktop/providers/lyrics_controller.dart';
 import 'package:nirvana_desktop/providers/search_provider.dart';
+import 'package:nirvana_desktop/services/download_service.dart';
 import 'package:nirvana_desktop/services/local_folders_notifier.dart';
 import 'package:nirvana_desktop/services/theme_notifier.dart';
 // the file where you define the class
@@ -30,3 +32,6 @@ final lyricsProvider = StateNotifierProvider<LyricsController, LyricsFrame>((
   return LyricsController(ref);
 });
 
+final downloadNotifierProvider = ChangeNotifierProvider(
+  (ref) => DownloadNotifier(DownloadService()),
+);
