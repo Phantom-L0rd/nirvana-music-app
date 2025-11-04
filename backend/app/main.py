@@ -3,10 +3,10 @@ import asyncio
 import os
 import time
 from fastapi.staticfiles import StaticFiles
-from fastapi import FastAPI, WebSocket
+from fastapi import BackgroundTasks, FastAPI, Form, WebSocket
 import json
-from typing import List
-from app.models import AddSongRequest, Album, ApiResponse, Artist, AudioFile, FolderRequest, Folders, IdRequest, LyricsFrame, OnlineTrack, Playlist
+from typing import Dict, List
+from app.models import AddSongRequest, Album, ApiResponse, Artist, AudioFile, FolderRequest, Folders, IdRequest, LyricsFrame, OnlineSongRequest, OnlineTrack, Playlist
 from app.utils import download_song, get_album_of_the_day, get_lyrics, get_stream_url, get_top_albums, get_top_artists, get_yt_search, scan_folder
 from app.db import add_folder_to_db, add_playlist_db, add_song_to_playlist_db, add_song_to_recents_db, cleanup_removed_songs, deactivate_folder, delete_playlist_db, get_album, get_album_songs, get_albums_from_db, get_artist, get_artist_albums, get_artist_songs,  get_artists_from_db, get_last_playlist_db, get_playlist_songs, get_recents_db, get_songs_from_db, get_user_playlists_db, initialize_db, is_first_startup, load_folders_from_db, load_core_playlists_db,mark_startup_complete
 from contextlib import asynccontextmanager
@@ -14,6 +14,8 @@ from contextlib import asynccontextmanager
 
 # Global variables
 first_startup = False
+
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -38,6 +40,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Nirvana Backend API",lifespan=lifespan)
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+progress_tracker: Dict[str, float] = {}
 
 
 @app.get("/")
@@ -192,27 +196,40 @@ def send_user_playlists():
 def send_album_songs(id: int):
     return get_playlist_songs(id)
 
-@app.websocket("/ws/download")
-async def websocket_download(websocket: WebSocket):
-    await websocket.accept()
+# @app.websocket("/ws/download")
+# async def websocket_download(websocket: WebSocket):
+#     await websocket.accept()
 
-    data = await websocket.receive_json()
-    song = data["song"]
+#     data = await websocket.receive_json()
+#     song = data["song"]
 
-    def progress_hook(d):
-        if d['status'] == 'downloading':
-            percent = d.get('_percent_str', '0%').replace('%', '')
-            asyncio.create_task(websocket.send_text(json.dumps({
-                "stage": "downloading",
-                "progress": float(percent)
-            })))
-        elif d['status'] == 'finished':
-            asyncio.create_task(websocket.send_text(json.dumps({
-                "stage": "processing",
-                "progress": 100
-            })))
+#     def progress_hook(d):
+#         if d['status'] == 'downloading':
+#             percent = d.get('_percent_str', '0%').replace('%', '')
+#             asyncio.create_task(websocket.send_text(json.dumps({
+#                 "stage": "downloading",
+#                 "progress": float(percent)
+#             })))
+#         elif d['status'] == 'finished':
+#             asyncio.create_task(websocket.send_text(json.dumps({
+#                 "stage": "processing",
+#                 "progress": 100
+#             })))
 
-    download_song(song,progress_hook)
+#     download_song(song,progress_hook)
 
-    await websocket.send_json({"stage": "done", "progress": 100})
-    await websocket.close()
+#     await websocket.send_json({"stage": "done", "progress": 100})
+#     await websocket.close()
+
+@app.post("/start-download")
+def start_download( background_tasks: BackgroundTasks, song: OnlineTrack):
+    # song = request.song
+    print(song )
+    job_id = str(time.time())  # simple ID
+    progress_tracker[job_id] = 0
+    background_tasks.add_task(download_song, song, job_id, progress_tracker)
+    return {"job_id": job_id}
+
+@app.get("/progress/{job_id}")
+def get_progress(job_id: str):
+    return {"progress": progress_tracker.get(job_id, 0)}

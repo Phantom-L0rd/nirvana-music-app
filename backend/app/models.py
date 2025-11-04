@@ -30,6 +30,9 @@ class OnlineTrack(BaseModel):
     lyrics_id: Optional[str] = None
     track_info: AudioFile
 
+class OnlineSongRequest(BaseModel):
+    song: OnlineTrack
+
 class Playlist(BaseModel):
     id: int
     name: str

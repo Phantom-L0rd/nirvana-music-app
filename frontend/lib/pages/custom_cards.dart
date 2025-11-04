@@ -566,22 +566,11 @@ class _SongCardState extends ConsumerState<SongCard> {
     // READ the controller - use this to call methods
     final audioController = ref.read(audioControllerProvider.notifier);
 
-    final downloadNotifier = ref.watch(downloadNotifierProvider);
+    final downloadNotifier = ref.watch(downloadProvider);
 
     final isCurrentlyPlaying = audioState.currentTrack != null
         ? audioState.currentTrack!.id == widget.song.id
         : false;
-
-    ref.listen<DownloadNotifier>(downloadNotifierProvider, (prev, next) {
-      if (next.error != null) {
-        SnackBar(
-          content: Text(
-            'Error: ${downloadNotifier.error}',
-            style: const TextStyle(color: Colors.red),
-          ),
-        );
-      }
-    });
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovering = true),
@@ -717,12 +706,9 @@ class _SongCardState extends ConsumerState<SongCard> {
                 ),
                 const SizedBox(width: 8),
                 if (widget.song.type == SongType.online &&
-                    downloadNotifier.isDownloading)
-                  LinearProgressIndicator(
-                    value: downloadNotifier.progress / 100,
-                  ),
-                if (widget.song.type == SongType.online)
-                  Text(downloadNotifier.stage),
+                    downloadNotifier.isDownloading &&
+                    downloadNotifier.id == widget.song.id)
+                  Text("${downloadNotifier.progress.toStringAsFixed(1)}%"),
                 widget.song.type == SongType.local
                     ? MoreOptionsWidget(
                         playlistIds: widget.song.playlistIds,
@@ -730,7 +716,7 @@ class _SongCardState extends ConsumerState<SongCard> {
                       )
                     : IconButton(
                         onPressed: downloadNotifier.isDownloading
-                            ? downloadNotifier.cancelDownload
+                            ? null
                             : () {
                                 final OnlineTrack songData = OnlineTrack(
                                   id: widget.song.id,
@@ -738,11 +724,12 @@ class _SongCardState extends ConsumerState<SongCard> {
                                   lyricId: widget.lyricId,
                                 );
                                 ref
-                                    .read(downloadNotifierProvider)
+                                    .read(downloadProvider)
                                     .startDownload(songData);
                               },
                         icon: Icon(
-                          downloadNotifier.isDownloading
+                          downloadNotifier.isDownloading &&
+                                  downloadNotifier.id == widget.song.id
                               ? Icons.close_rounded
                               : Icons.download_rounded,
                         ),

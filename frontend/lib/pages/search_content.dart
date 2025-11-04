@@ -235,6 +235,7 @@ class _SearchResultsPageState extends ConsumerState<SearchResultsPage> {
                                     song: onlineTrack.track,
                                     lyricId: onlineTrack.lyricId,
                                     onTap: () async {
+                                      debugPrint(onlineTrack.lyricId);
                                       final url = await ApiService.getStreamUrl(
                                         onlineTrack.id,
                                       );

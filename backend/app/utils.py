@@ -6,8 +6,10 @@ import hashlib
 import random
 import re
 import subprocess
-from typing import List
+from typing import Dict, List
 from mutagen import File
+from mutagen.mp3 import MP3
+from mutagen.id3 import ID3, APIC
 import eyed3
 from eyed3.id3 import DEFAULT_LANG
 import requests
@@ -31,6 +33,8 @@ def scan_folder(folder_path: str) -> set[str]:
     for root, _, files in os.walk(folder_path):
         for filename in files:
             full_path = os.path.join(root, filename)
+
+            
             
             if not is_audio_file(filename):
                 continue
@@ -38,11 +42,25 @@ def scan_folder(folder_path: str) -> set[str]:
             try:
                 audio = File(full_path)
                 
+                
                 if not audio:
                     print("failed at audio")
                     continue
+
                 
-                apic = audio.tags.get('APIC:') if audio.tags else None
+
+                found_tag = ''
+                for tag in audio.tags.keys():
+                    if tag.startswith('APIC:'):
+                        found_tag = tag
+                        break
+                apic = None
+                if found_tag:          
+                    apic = audio.tags.get(found_tag) if audio.tags else None
+                
+                cover_art = None
+                if apic:
+                    cover_art = save_album_art(apic.data)
                 
                 # Extract metadata
                 title = audio.get('TIT2', [filename])[0]
@@ -82,7 +100,7 @@ def scan_folder(folder_path: str) -> set[str]:
                     artist=artist,
                     title=title,
                     album=album,
-                    cover_art=save_album_art(apic.data) if apic else None,
+                    cover_art=cover_art,
                     year=year,
                     track_num=None,
                     date_added=time,
@@ -261,10 +279,10 @@ def convert_to_lyrics_lines(lyrics, has_timestamps: bool):
     if has_timestamps:
         for line in lyrics:
             # Format: [mm:ss.xx] lyric line
-            total_seconds = line.get('start_time',0) / 1000
+            total_seconds = line.start_time / 1000
             minutes, seconds = divmod(total_seconds, 60)
             centiseconds = int((seconds - int(seconds)) * 100)
-            lyric_lines.append(f"[{int(minutes):02d}:{int(seconds):02d}.{centiseconds:02d}] {line.get('text','')}")
+            lyric_lines.append(f"[{int(minutes):02d}:{int(seconds):02d}.{centiseconds:02d}] {line.text}")
     else:
         lyric_lines = lyrics.split('\n')
     return lyric_lines
@@ -274,49 +292,58 @@ def create_lrc(lyrics_data, output_file):
             # Format: [mm:ss.xx] lyric line
             f.write(lyrics_data)
 
-def download_song(data: OnlineTrack, progress_hook) -> ApiResponse:
+def download_song(data: OnlineTrack,job_id: str, progress_tracker: Dict[str, float]):
+    """
+    Download a song using yt_dlp and update progress via tracker.
+    """
+    def hook(d):
+        if d['status'] == 'downloading':
+            total = d.get('total_bytes', 1)
+            downloaded = d.get('downloaded_bytes', 0)
+            progress = (downloaded / total) * 100
+            progress_tracker[job_id] = round(progress, 2)
+        elif d['status'] == 'finished':
+            progress_tracker[job_id] = 100.0
+
     ytmusic = YTMusic()
     url = f"https://www.youtube.com/watch?v={data.id}"
-    
+    print(url)
+
 
     filename =f"{sanitize_filename(data.track_info.title)} - {sanitize_filename(data.track_info.album.artist.name)}"
-    output_filename = get_downloads_path(f"{filename}.mp3")
-    thumbnail_path = get_downloads_path(f"{filename}.jpg")
+    output_filename = get_downloads_path(filename)
+    # thumbnail_path = get_downloads_path(f"{filename}.jpg")
 
-    if not os.path.exists(output_filename):
+    if not os.path.exists(f"{output_filename}.mp3"):
 
-        thumbnail_url = data.track_info.album.cover_art
-        try:
-            thumbnail_data = requests.get(thumbnail_url).content
-        except requests.RequestException as e:
-            thumbnail_data = None
+        # thumbnail_url = data.track_info.album.cover_art
+        # try:
+        #     thumbnail_data = requests.get(thumbnail_url).content
+        # except requests.RequestException as e:
+        #     thumbnail_data = None
         # Save thumbnail temporarily
-        if thumbnail_data:
-            with open(thumbnail_path, 'wb') as f:
-                f.write(thumbnail_data)
+        # if thumbnail_data:
+        #     with open(thumbnail_path, 'wb') as f:
+        #         f.write(thumbnail_data)
 
         ydl_opts = {
             'format': 'bestaudio/best',
             'outtmpl': output_filename + '.%(ext)s',
             'ffmpeg_location': ffmpeg_path,
-            'progress_hooks': [progress_hook],
+            'progress_hooks': [hook],
+            'writethumbnail': True,  # let yt-dlp download thumbnail
             'postprocessors': [
                 {
                     'key': 'FFmpegExtractAudio',
                     'preferredcodec': 'mp3',
                     'preferredquality': '192',
                 },
-                {
-                    'key': 'FFmpegMetadata',
-                    'add_metadata': True,
-                },
-                {
-                    'key': 'EmbedThumbnail',
-                    'already_have_thumbnail': True,  # Use our custom thumbnail
+                {'key': 'FFmpegMetadata'},
+
+                { 
+                    'key': 'EmbedThumbnail', 
                 }
             ],
-            'writethumbnail': False,  # Disable auto-thumbnail (we're using our own)
-            'writeinfojson': False,
             'postprocessor_args': [
                 '-metadata', f"title={data.track_info.title}",
                 '-metadata', f"artist={data.track_info.album.artist.name}",
@@ -325,18 +352,30 @@ def download_song(data: OnlineTrack, progress_hook) -> ApiResponse:
             ],
         }
 
+
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                # if data.track_info.album.cover_art:
+                #     ydl.params['thumbnails'] = [{'url': data.track_info.album.cover_art}]
                 ydl.download([url])
             # ===== Embed Lyrics =====
-            audio = eyed3.load(output_filename)
+            audio = eyed3.load(f"{output_filename}.mp3")
             if audio.tag is None:
                 audio.initTag()
 
-            if os.path.exists(thumbnail_path):
-                with open(thumbnail_path, 'rb') as img:
-                    audio.tag.images.set(3, img.read(), 'image/jpeg')
-                audio.tag.save()
+            # if os.path.exists(thumbnail_path):
+            #     test_audio = MP3(f"{output_filename}.mp3", ID3=ID3)
+            #     with open(thumbnail_path, 'rb') as img:
+            #         test_audio.tags.add(
+            #             APIC(
+            #                 encoding=3,
+            #                 mime='image/jpg',
+            #                 type=3,
+            #                 desc='Cover',
+            #                 data=img.read()
+            #             )
+            #         )
+            #     test_audio.save()
 
             # Get the lyrics using the browse ID
             if data.lyrics_id:
@@ -346,35 +385,27 @@ def download_song(data: OnlineTrack, progress_hook) -> ApiResponse:
                     lyrics_data = ytmusic.get_lyrics(data.lyrics_id)
             else:
                 lyrics_data = None
-
+            # print(lyrics_data)
             if lyrics_data:
-                lyrics = convert_to_lyrics_lines(lyrics_data.lyrics, lyrics_data.hasTimestamps)
-                if lyrics_data.hasTimestamps:
+                lyrics = convert_to_lyrics_lines(lyrics_data.get("lyrics", []), lyrics_data.get('hasTimestamps', False))
+                if lyrics_data.get('hasTimestamps', False):
                     lyrics_text = "\n".join(lyrics)
                     create_lrc(lyrics_text, filename + '.lrc')
                 else:
                     lyrics_text = "\n".join(lyrics)
-
+    
                 audio.tag.lyrics.set(lyrics_text)
                 audio.tag.save()
         except Exception as e:
-            return ApiResponse(
-                success=False,
-                message=f"Failed to download or tag {filename}: {e}"
-            )
+            print(e)
                 
-        finally:
-            # Cleanup: Delete thumbnail after processing
-            if os.path.exists(thumbnail_path):
-                os.remove(thumbnail_path)
-            return ApiResponse(
-                success=True,
-                message=f"{filename} is successfully downloaded"
-            )
-    return ApiResponse(
-        success=False,
-        message="Song already downloaded"
-    )
+        # finally:
+        #     # Cleanup: Delete thumbnail after processing
+        #     if os.path.exists(thumbnail_path):
+        #         os.remove(thumbnail_path)
+            
+    progress_tracker[job_id] = 100.0
+    print("done")
 
 def update_yt_dlp():
     """Update yt_dlp to latest version silently."""

@@ -1,12 +1,13 @@
 import 'dart:convert';
 
+import 'package:flutter/cupertino.dart';
 import 'package:nirvana_desktop/models/models.dart';
 import 'package:web_socket_channel/status.dart' as status;
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 class DownloadService {
   WebSocketChannel? _channel;
-  static const String baseUrl = 'http://localhost:8000';
+  static const String baseUrl = 'ws://localhost:8000';
 
   DownloadService();
 
@@ -16,12 +17,15 @@ class DownloadService {
     required void Function() onDone,
     required void Function(Object error) onError,
   }) {
-    _channel = WebSocketChannel.connect(Uri.parse('$baseUrl/ws/download'));
+    _channel = WebSocketChannel.connect(
+      Uri.parse('wss://localhost:8000/ws/download'),
+    );
 
     _channel!.stream.listen(
       (message) {
         try {
           final data = jsonDecode(message);
+          debugPrint("all good here");
           final progress = (data['progress'] as num).toDouble();
           final stage = data['stage'] as String;
 
@@ -39,7 +43,7 @@ class DownloadService {
       onDone: onDone,
     );
 
-    _channel!.sink.add(jsonEncode({'song':song}));
+    _channel!.sink.add(jsonEncode({'song': song}));
   }
 
   void close() {

@@ -1,4 +1,3 @@
-
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:nirvana_desktop/models/models.dart';
 import 'package:nirvana_desktop/providers/providers.dart';
@@ -31,6 +30,8 @@ class Search extends _$Search {
       state = const SearchResultsFrame();
       return;
     }
+
+    // if (query == state.query) return;
 
     state = state.copyWith(isLoading: true, query: query);
 
@@ -69,6 +70,7 @@ class Search extends _$Search {
       state = const SearchResultsFrame();
       return;
     }
+    // if (query == state.query) return;
 
     state = state.copyWith(isOnlineLoading: true);
 

@@ -56,7 +56,7 @@ class AudioController extends _$AudioController {
       if (position.inSeconds >= 15 && !_hasAddedToRecents) {
         _hasAddedToRecents = true; // ensure it's only added once per song
         final currentTrack = state.currentTrack;
-        if (currentTrack != null) {
+        if (currentTrack != null && currentTrack.type == SongType.local) {
           debugPrint("added to recently played");
           await ref
               .read(localFoldersProvider.notifier)

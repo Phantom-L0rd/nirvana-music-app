@@ -220,12 +220,12 @@ class OnlineTrack {
     return OnlineTrack(
       id: json['id'],
       track: AudioFile.fromJson(json['track_info']),
-      lyricId: json['lyric_id'],
+      lyricId: json['lyrics_id'],
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {'id': id, 'lyric_id': lyricId, 'track_info': track.toJson()};
+    return {'id': id, 'lyrics_id': lyricId, 'track_info': track.toJson()};
   }
 }
 

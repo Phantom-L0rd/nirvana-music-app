@@ -223,17 +223,25 @@ def get_or_create_artist(name: str) -> str:
 
 
 def get_or_create_album(title: str, artist_id: str, artist_name: str, year: int = None, genre: str =None, album_art_path: str = None) -> str:
- 
+
     conn = get_connection()
     cursor = conn.cursor()
 
     cursor.execute("""
-        SELECT id FROM albums WHERE title = ? AND artist_id = ?
+        SELECT id, album_art_path FROM albums WHERE title = ? AND artist_id = ?
     """, (title, artist_id))
     row = cursor.fetchone()
-    if row:
+    id, cover_art = row
+
+    if not cover_art and album_art_path:
+        
+        cursor.execute("""
+            UPDATE albums SET album_art_path = ? WHERE id = ?
+        """,(album_art_path, id))
+        conn.commit()
+    if id:
         conn.close()
-        return row[0]
+        return id
     
 
     unique_id = hash_string(f"{title.strip().lower()}|{artist_name.strip().lower()}|{year or ''}")
